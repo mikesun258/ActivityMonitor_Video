@@ -30,9 +30,7 @@ class VideoMonitor : IXposedHookLoadPackage {
     )
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        // 强制日志：模块一加载就输出
         Log.d(TAG, "模块已加载，当前包名：${lpparam.packageName}")
-
         if (lpparam.packageName in targetPackages) {
             hookRecyclerView(lpparam)
         }
@@ -44,7 +42,6 @@ class VideoMonitor : IXposedHookLoadPackage {
             val rvClass = lpparam.classLoader.loadClass("androidx.recyclerview.widget.RecyclerView")
             Log.d(TAG, "找到 RecyclerView 类")
 
-            // Hook RecyclerView 构造方法，在创建时注入监听器
             XposedBridge.hookAllConstructors(rvClass, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
                     val recyclerView = param.thisObject as RecyclerView
@@ -57,15 +54,13 @@ class VideoMonitor : IXposedHookLoadPackage {
                             val lm = recyclerView.layoutManager
                             if (lm is androidx.recyclerview.widget.LinearLayoutManager) {
                                 val pos = lm.findFirstCompletelyVisibleItemPosition()
-                                if (pos != -1 && pos != lastPos) {
+                                if (pos != -1 && pos != lastPos && pos != lastPos) {
                                     lastPos = pos
                                     sendBroadcast(recyclerView, pos)
                                 }
                             }
                         }
                     }
-
-                    // 直接调用 addOnScrollListener 添加监听器
                     recyclerView.addOnScrollListener(wrapperListener)
                     Log.d(TAG, "监听器已注入")
                 }
@@ -81,7 +76,6 @@ class VideoMonitor : IXposedHookLoadPackage {
             putExtra("pkg_name", view.context.packageName)
             putExtra("video_position", position)
             putExtra("view_id", view.id)
-            // 定向发给 MacroDroid，避免被系统拦截
             setPackage(MACRODROID_PKG)
             addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
         }
