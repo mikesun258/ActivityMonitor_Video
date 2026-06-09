@@ -1,17 +1,22 @@
-pluginManagement {
+buildscript {
+    ext.kotlin_version = '1.9.0'
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+allprojects {
     repositories {
         google()
         mavenCentral()
     }
 }
 
-rootProject.name = "ActivityMonitor_Video"
-include(":app")
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
