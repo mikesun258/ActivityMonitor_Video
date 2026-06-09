@@ -1,11 +1,13 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         google()
         mavenCentral()
-        gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
+    // 核心：保持 FAIL_ON_PROJECT_REPOS，强制统一用 settings 管理仓库
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
@@ -13,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ActivityMonitor_Video"
-include(":app")
+rootProject.name = "ActivityMonitor"
+include ':app'
