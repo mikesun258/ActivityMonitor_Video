@@ -13,37 +13,28 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 class VideoMonitor : IXposedHookLoadPackage {
     private val TAG = "VideoMonitor"
     private val BROADCAST_VIDEO_SWITCH = "com.mikesun258.activitymonitor.VIDEO_SWITCH"
-    private val MACRODROID_PKG = "com.joaomgcd.tasker"
+    private val MACRODROID_PKG = "com.arlosoft.macrodroid"
 
+    // 目标包名列表，可根据需要添加
     private val targetPackages = listOf(
         "com.bytedance.douyin",
-        "com.bytedance.douyin.lite",
-        "com.bytedance.douyin.extreme",
-        "com.bytedance.douyin3",
-        "com.bytedance.douyin2",
-        "com.bytedance.douyinselected",
-        "com.ik.mang",
-        "com.ik.shortdrama",
-        "com.hippo.drama",
-        "com.kuaishou.nebula",
-        "com.huolong.mangju",
+        "com.dragon.read",
         "com.kylin.read"
     )
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
+        if (lpparam.packageName !in targetPackages) return
         Log.d(TAG, "模块已加载，当前包名：${lpparam.packageName}")
-        if (lpparam.packageName in targetPackages) {
-            hookLinearLayoutManager(lpparam)
-        }
+        hookLinearLayoutManager(lpparam)
     }
 
     private fun hookLinearLayoutManager(lpparam: XC_LoadPackage.LoadPackageParam) {
-        Log.d(TAG, "开始 Hook LinearLayoutManager，包名：${lpparam.packageName}")
+        Log.d(TAG, "开始 Hook LinearLayoutManager")
         try {
             val lmClass = lpparam.classLoader.loadClass("androidx.recyclerview.widget.LinearLayoutManager")
             Log.d(TAG, "找到 LinearLayoutManager 类")
 
-            // Hook findFirstCompletelyVisibleItemPosition 方法，直接在布局计算时获取位置
+            // Hook findFirstCompletelyVisibleItemPosition 方法
             XposedBridge.hookAllMethods(lmClass, "findFirstCompletelyVisibleItemPosition", object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
                     val pos = param.result as? Int ?: return
