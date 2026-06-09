@@ -1,23 +1,17 @@
-buildscript {
-    ext.kotlin_version = '1.9.0'
+pluginManagement {
     repositories {
         google()
         mavenCentral()
-    }
-    dependencies {
-        // 关键修复：使用兼容的 AGP 版本，避免与 Gradle 9.0 冲突
-        classpath 'com.android.tools.build:gradle:8.2.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        gradlePluginPortal()
     }
 }
-
-allprojects {
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
     }
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
-}
+rootProject.name = "ActivityMonitor_Video"
+include(":app")
