@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+    // 关键修复：添加 namespace，这是 AGP 7.0+ 强制要求的
+    namespace "com.mikesun258.activitymonitor.video"
     compileSdk 34
     buildToolsVersion "34.0.0"
 
@@ -31,6 +33,7 @@ android {
 
     kotlinOptions {
         jvmTarget = "1.8"
+        // 关键修复：禁用与 Gradle 9.0 不兼容的废弃特性
         freeCompilerArgs += ["-Xjdk-release=1.8"]
     }
 }
