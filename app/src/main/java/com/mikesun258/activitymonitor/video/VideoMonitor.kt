@@ -44,39 +44,16 @@ class VideoMonitor : IXposedHookLoadPackage {
             val rvClass = lpparam.classLoader.loadClass("androidx.recyclerview.widget.RecyclerView")
             Log.d(TAG, "找到 RecyclerView 类")
 
-            // Hook addOnScrollListener 方法，不直接替换参数，改用代理包装
-            XposedBridge.hookAllMethods(rvClass, "addOnScrollListener", object : XC_MethodHook() {
-                override fun beforeHookedMethod(param: MethodHookParam) {
-                    val originListener = param.args[0] ?: return
-                    // 已经被我们包装过的监听器，跳过
-                    if (originListener.javaClass.name.contains("WrapperListener")) {
-                        Log.d(TAG, "监听器已被包装，跳过")
-                        return
-                    }
-                    Log.d(TAG, "检测到新监听器：${originListener.javaClass.name}")
-                }
-
+            // Hook RecyclerView 构造方法，在创建时注入监听器
+            XposedBridge.hookAllConstructors(rvClass, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
                     val recyclerView = param.thisObject as RecyclerView
-                    val originListener = param.args[0] as? RecyclerView.OnScrollListener ?: return
+                    Log.d(TAG, "新 RecyclerView 创建：$recyclerView")
 
-                    // 反射获取 RecyclerView 里的监听器列表（隐藏字段）
-                    val listenersField = RecyclerView::class.java.getDeclaredField("mOnScrollListeners")
-                    listenersField.isAccessible = true
-                    @Suppress("UNCHECKED_CAST")
-                    val listenerList = listenersField.get(recyclerView) as MutableList<RecyclerView.OnScrollListener>
-
-                    // 如果已经被包装过，跳过
-                    if (originListener.javaClass.name.contains("WrapperListener")) return
-
-                    // 移除原监听器，添加包装器
-                    recyclerView.removeOnScrollListener(originListener)
-                    recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                    val wrapperListener = object : RecyclerView.OnScrollListener() {
                         private var lastPos = -1
 
                         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                            // 调用原监听器逻辑
-                            originListener.onScrolled(recyclerView, dx, dy)
                             val lm = recyclerView.layoutManager
                             if (lm is androidx.recyclerview.widget.LinearLayoutManager) {
                                 val pos = lm.findFirstCompletelyVisibleItemPosition()
@@ -86,12 +63,11 @@ class VideoMonitor : IXposedHookLoadPackage {
                                 }
                             }
                         }
+                    }
 
-                        override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                            originListener.onScrollStateChanged(recyclerView, newState)
-                        }
-                    })
-                    Log.d(TAG, "监听器包装完成")
+                    // 直接调用 addOnScrollListener 添加监听器
+                    recyclerView.addOnScrollListener(wrapperListener)
+                    Log.d(TAG, "监听器已注入")
                 }
             })
             Log.d(TAG, "RV Hook 成功")
