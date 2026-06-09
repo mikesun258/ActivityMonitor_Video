@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mikesun258.activitymonitor">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 声明为 Xposed 模块 -->
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="ActivityMonitor_Video"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light">
 
+        <!-- Xposed 模块声明 -->
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="Xposed Monitor Module" />
+            android:value="短视频滑动监听模块" />
         <meta-data
             android:name="xposedminversion"
             android:value="82" />
@@ -24,4 +23,3 @@
     </application>
 
 </manifest>
-
