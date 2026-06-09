@@ -12,6 +12,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 class VideoMonitor : IXposedHookLoadPackage {
     private val TAG = "VideoMonitor"
     private val BROADCAST_VIDEO_SWITCH = "com.mikesun258.activitymonitor.VIDEO_SWITCH"
+    private val MACRODROID_PKG = "com.joaomgcd.tasker"
 
     private val targetPackages = listOf(
         "com.bytedance.douyin",
@@ -39,37 +40,33 @@ class VideoMonitor : IXposedHookLoadPackage {
             val rvClass = lpparam.classLoader.loadClass("androidx.recyclerview.widget.RecyclerView")
 
             XposedBridge.hookAllMethods(rvClass, "addOnScrollListener", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
+                override fun beforeHookedMethod(param: MethodHookParam) {
                     val originListener = param.args[0] as RecyclerView.OnScrollListener?
-                    val recyclerView = param.thisObject as RecyclerView
+                    if (originListener == null) return
 
-                    val newListener = object : RecyclerView.OnScrollListener() {
+                    val wrapperListener = object : RecyclerView.OnScrollListener() {
                         private var lastPos = -1
-                        private var firstIdle = true
 
                         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                            super.onScrolled(recyclerView, dx, dy)
+                            originListener.onScrolled(recyclerView, dx, dy)
                             val lm = recyclerView.layoutManager
                             if (lm is androidx.recyclerview.widget.LinearLayoutManager) {
-                                lastPos = lm.findFirstCompletelyVisibleItemPosition()
+                                val pos = lm.findFirstCompletelyVisibleItemPosition()
+                                if (pos != -1 && pos != lastPos) {
+                                    lastPos = pos
+                                    sendBroadcast(recyclerView, pos)
+                                }
                             }
-                            originListener?.onScrolled(recyclerView, dx, dy)
                         }
 
                         override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                            super.onScrollStateChanged(recyclerView, newState)
-                            if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                                if (firstIdle || lastPos != -1) {
-                                    firstIdle = false
-                                    sendBroadcast(recyclerView, lastPos)
-                                }
-                            }
-                            originListener?.onScrollStateChanged(recyclerView, newState)
+                            originListener.onScrollStateChanged(recyclerView, newState)
                         }
                     }
-                    recyclerView.addOnScrollListener(newListener)
+                    param.args[0] = wrapperListener
                 }
             })
+            Log.d(TAG, "RV Hook 成功")
         } catch (e: Throwable) {
             Log.e(TAG, "RV Hook Error", e)
         }
@@ -80,9 +77,10 @@ class VideoMonitor : IXposedHookLoadPackage {
             putExtra("pkg_name", view.context.packageName)
             putExtra("video_position", position)
             putExtra("view_id", view.id)
+            setPackage(MACRODROID_PKG)
             addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
         }
         view.context.sendBroadcast(intent)
+        Log.d(TAG, "已发送广播：pos=$position")
     }
 }
-
