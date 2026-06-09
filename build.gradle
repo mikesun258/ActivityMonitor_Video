@@ -4,4 +4,4 @@ plugins {
     id 'org.jetbrains.kotlin.android' version '1.9.20' apply false
 }
 
-// 注意：这里不再写 repositories 块，避免和 settings.gradle 冲突
+// 不再在根 build.gradle 声明仓库，统一交给 settings.gradle 管理
