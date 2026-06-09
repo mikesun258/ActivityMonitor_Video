@@ -1,16 +1,20 @@
 buildscript {
-    ext.kotlin_version = "1.9.0"
+    ext.kotlin_version = '1.9.0'
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://maven.aliyun.com/repository/google' }
-        maven { url 'https://maven.aliyun.com/repository/central' }
-        maven { url 'https://mirrors.tuna.tsinghua.edu.cn/google' }
-        maven { url 'https://mirrors.tuna.tsinghua.edu.cn/maven-central' }
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:8.1.0"
+        // 关键修复：使用兼容的 AGP 版本，避免与 Gradle 9.0 冲突
+        classpath 'com.android.tools.build:gradle:8.2.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
     }
 }
 
