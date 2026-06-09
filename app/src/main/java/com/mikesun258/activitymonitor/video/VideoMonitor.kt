@@ -3,6 +3,7 @@ package com.mikesun258.activitymonitor.video
 import android.content.Intent
 import android.util.Log
 import android.view.View
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -32,42 +33,31 @@ class VideoMonitor : IXposedHookLoadPackage {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         Log.d(TAG, "模块已加载，当前包名：${lpparam.packageName}")
         if (lpparam.packageName in targetPackages) {
-            hookRecyclerView(lpparam)
+            hookLinearLayoutManager(lpparam)
         }
     }
 
-    private fun hookRecyclerView(lpparam: XC_LoadPackage.LoadPackageParam) {
-        Log.d(TAG, "开始 Hook RecyclerView，包名：${lpparam.packageName}")
+    private fun hookLinearLayoutManager(lpparam: XC_LoadPackage.LoadPackageParam) {
+        Log.d(TAG, "开始 Hook LinearLayoutManager，包名：${lpparam.packageName}")
         try {
-            val rvClass = lpparam.classLoader.loadClass("androidx.recyclerview.widget.RecyclerView")
-            Log.d(TAG, "找到 RecyclerView 类")
+            val lmClass = lpparam.classLoader.loadClass("androidx.recyclerview.widget.LinearLayoutManager")
+            Log.d(TAG, "找到 LinearLayoutManager 类")
 
-            XposedBridge.hookAllConstructors(rvClass, object : XC_MethodHook() {
+            // Hook findFirstCompletelyVisibleItemPosition 方法，直接在布局计算时获取位置
+            XposedBridge.hookAllMethods(lmClass, "findFirstCompletelyVisibleItemPosition", object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    val recyclerView = param.thisObject as RecyclerView
-                    Log.d(TAG, "新 RecyclerView 创建：$recyclerView")
+                    val pos = param.result as? Int ?: return
+                    val lm = param.thisObject as LinearLayoutManager
+                    val recyclerView = lm.recyclerView ?: return
 
-                    val wrapperListener = object : RecyclerView.OnScrollListener() {
-                        private var lastPos = -1
-
-                        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                            val lm = recyclerView.layoutManager
-                            if (lm is androidx.recyclerview.widget.LinearLayoutManager) {
-                                val pos = lm.findFirstCompletelyVisibleItemPosition()
-                                if (pos != -1 && pos != lastPos && pos != lastPos) {
-                                    lastPos = pos
-                                    sendBroadcast(recyclerView, pos)
-                                }
-                            }
-                        }
-                    }
-                    recyclerView.addOnScrollListener(wrapperListener)
-                    Log.d(TAG, "监听器已注入")
+                    // 过滤无效位置
+                    if (pos == -1) return
+                    sendBroadcast(recyclerView, pos)
                 }
             })
-            Log.d(TAG, "RV Hook 成功")
+            Log.d(TAG, "LinearLayoutManager Hook 成功")
         } catch (e: Throwable) {
-            Log.e(TAG, "RV Hook Error", e)
+            Log.e(TAG, "LinearLayoutManager Hook Error", e)
         }
     }
 
